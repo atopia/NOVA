@@ -875,6 +875,88 @@ void Ec::sys_ec_ctrl()
             break;
         }
 
+        case 6: /* get vcpu state */
+        {
+            Capability cap = Space_obj::lookup (r->ec());
+            if (EXPECT_FALSE (cap.obj()->type() != Kobject::EC || !(cap.prm() & 1UL << 0))) {
+                trace (TRACE_ERROR, "%s: Bad EC CAP (%#lx)", __func__, r->ec());
+                sys_finish<Sys_regs::BAD_CAP>();
+            }
+            Ec *ec = static_cast<Ec *>(cap.obj());
+
+            if (EXPECT_FALSE (current->cpu != ec->cpu)) {
+                trace (TRACE_ERROR, "%s: Called from remote CPU", __func__);
+                sys_finish<Sys_regs::BAD_CPU>();
+            }
+
+            if (!(ec->regs.hazard() & HZD_RECALL))
+                ec->regs.set_hazard (HZD_RECALL);
+
+
+            Cpu_regs regs(ec->regs);
+            regs.mtd = r->mtd_value();
+
+            bool fpu = false;
+
+            if (regs.vmcb_state && (Hip::feature() & Hip::FEAT_SVM))
+                fpu = current->utcb->load_svm (&regs);
+            else if (regs.vmcs_state && (Hip::feature() & Hip::FEAT_VMX))
+                fpu = current->utcb->load_vmx (&regs);
+            else {
+                trace (TRACE_ERROR, "%s: Bad EC CAP (%#lx)", __func__, r->ec());
+                sys_finish<Sys_regs::BAD_CAP>();
+            }
+
+            if (EXPECT_FALSE (fpu)) {
+                ec->transfer_fpu (current);
+
+                if (!Cmdline::fpu_lazy)
+                    Cpu::hazard &= ~HZD_FPU;
+            }
+
+            sys_finish<Sys_regs::SUCCESS>();
+            }
+        case 7: /* set vcpu state */
+        {
+            Capability cap = Space_obj::lookup (r->ec());
+            if (EXPECT_FALSE (cap.obj()->type() != Kobject::EC || !(cap.prm() & 1UL << 0))) {
+                trace (TRACE_ERROR, "%s: Bad EC CAP (%#lx)", __func__, r->ec());
+                sys_finish<Sys_regs::BAD_CAP>();
+            }
+
+            Ec *ec = static_cast<Ec *>(cap.obj());
+
+            if (EXPECT_FALSE (current->cpu != ec->cpu)) {
+                trace (TRACE_ERROR, "%s: Called from remote CPU", __func__);
+                sys_finish<Sys_regs::BAD_CPU>();
+            }
+
+            bool fpu = false;
+            Utcb *src = current->utcb;
+
+            if (ec->regs.vmcb_state && (Hip::feature() & Hip::FEAT_SVM))
+                fpu = src->save_svm (&ec->regs);
+            else if (ec->regs.vmcs_state && (Hip::feature() & Hip::FEAT_VMX))
+                fpu = src->save_vmx (&ec->regs);
+            else {
+                trace (TRACE_ERROR, "%s: Bad EC CAP (%#lx)", __func__, r->ec());
+                sys_finish<Sys_regs::BAD_CAP>();
+            }
+
+            if (EXPECT_FALSE (fpu)) {
+                current->transfer_fpu (ec);
+
+                if (!Cmdline::fpu_lazy)
+                    Cpu::hazard &= ~HZD_FPU;
+            }
+
+            if (!r->recall() && (ec->regs.hazard() & HZD_RECALL))
+                ec->regs.clr_hazard(HZD_RECALL);
+
+            ec->regs.dst_portal = VM_EXIT_RECALL;
+
+            sys_finish<Sys_regs::SUCCESS>();
+        }
         default:
             sys_finish<Sys_regs::BAD_PAR>();
     }
