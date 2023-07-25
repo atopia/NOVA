@@ -889,18 +889,7 @@ void Ec::sys_ec_ctrl()
 
 
             Cpu_regs regs(ec->regs);
-            regs.mtd = Mtd::GPR_ACDB   |
-                       Mtd::GPR_BSD    |
-#ifdef __x86_64__
-                       Mtd::GPR_R8_R15 |
-#endif
-                       Mtd::RSP        |
-                       Mtd::RIP_LEN    |
-                       Mtd::RFLAGS     |
-                       Mtd::STA        |
-                       Mtd::INJ        |
-                       Mtd::TSC        |
-                       Mtd::QUAL;
+            regs.mtd = r->mtd_value();
             regs.dst_portal = VM_EXIT_RECALL;
 
             bool fpu = false;
