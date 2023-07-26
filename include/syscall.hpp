@@ -204,6 +204,9 @@ class Sys_ec_ctrl : public Sys_regs
         inline bool state() const { return ARG_2 == 1; }
 
         ALWAYS_INLINE
+        inline bool recall() const { return ARG_2 == 1; }
+
+        ALWAYS_INLINE
         inline unsigned cpu() const { return ARG_2 & 0xfff; }
 
         ALWAYS_INLINE

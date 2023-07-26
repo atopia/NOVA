@@ -940,7 +940,7 @@ void Ec::sys_ec_ctrl()
                     Cpu::hazard &= ~HZD_FPU;
             }
 
-            if (ec->regs.hazard() & HZD_RECALL)
+            if (!r->recall() && (ec->regs.hazard() & HZD_RECALL))
                 ec->regs.clr_hazard(HZD_RECALL);
 
             sys_finish<Sys_regs::SUCCESS>();
