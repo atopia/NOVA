@@ -884,6 +884,11 @@ void Ec::sys_ec_ctrl()
             }
             Ec *ec = static_cast<Ec *>(cap.obj());
 
+            if (EXPECT_FALSE (current->cpu != ec->cpu)) {
+                trace (TRACE_ERROR, "%s: Called from remote CPU", __func__);
+                sys_finish<Sys_regs::BAD_CPU>();
+            }
+
             if (!(ec->regs.hazard() & HZD_RECALL))
                 ec->regs.set_hazard (HZD_RECALL);
 
@@ -919,7 +924,13 @@ void Ec::sys_ec_ctrl()
                 trace (TRACE_ERROR, "%s: Bad EC CAP (%#lx)", __func__, r->ec());
                 sys_finish<Sys_regs::BAD_CAP>();
             }
+
             Ec *ec = static_cast<Ec *>(cap.obj());
+
+            if (EXPECT_FALSE (current->cpu != ec->cpu)) {
+                trace (TRACE_ERROR, "%s: Called from remote CPU", __func__);
+                sys_finish<Sys_regs::BAD_CPU>();
+            }
 
             bool fpu = false;
             Utcb *src = current->utcb;
