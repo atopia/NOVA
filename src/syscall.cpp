@@ -908,7 +908,7 @@ void Ec::sys_ec_ctrl()
             }
 
             if (EXPECT_FALSE (fpu)) {
-                ec->transfer_fpu (current);
+                memcpy(current->utcp->fpu, ec->fpu, sizeof(Utcb::fpu));
 
                 if (!Cmdline::fpu_lazy)
                     Cpu::hazard &= ~HZD_FPU;
@@ -944,7 +944,7 @@ void Ec::sys_ec_ctrl()
             }
 
             if (EXPECT_FALSE (fpu)) {
-                current->transfer_fpu (ec);
+                memcpy(ec->fpu, current->utcp->fpu, sizeof(ec->fpu));
 
                 if (!Cmdline::fpu_lazy)
                     Cpu::hazard &= ~HZD_FPU;

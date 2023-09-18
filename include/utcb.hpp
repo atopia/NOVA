@@ -23,6 +23,7 @@
 #include "buddy.hpp"
 #include "crd.hpp"
 #include "util.hpp"
+#include "fpu.hpp"
 
 class Cpu_regs;
 
@@ -90,6 +91,7 @@ class Utcb_data
                 Utcb_segment    es, cs, ss, ds, fs, gs, ld, tr, gd, id;
                 uint64          tsc_val, tsc_off, tsc_aux;
                 uint64          exit_value;
+                Fpu             fpu;
             };
 
             mword mr[(PAGE_SIZE - sizeof (Utcb_head)) / sizeof(mword)];
