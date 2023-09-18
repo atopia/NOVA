@@ -908,7 +908,7 @@ void Ec::sys_ec_ctrl()
             }
 
             if (EXPECT_FALSE (fpu)) {
-                ec->transfer_fpu (current);
+                ec->load_fpu();
 
                 if (!Cmdline::fpu_lazy)
                     Cpu::hazard &= ~HZD_FPU;
@@ -944,7 +944,7 @@ void Ec::sys_ec_ctrl()
             }
 
             if (EXPECT_FALSE (fpu)) {
-                current->transfer_fpu (ec);
+                ec->save_fpu();
 
                 if (!Cmdline::fpu_lazy)
                     Cpu::hazard &= ~HZD_FPU;
